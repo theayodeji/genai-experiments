@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: noshbites-test
+    env: node
+    buildCommand: cd client && npm install && npm run build && cd ../server && npm install
+    startCommand: node server.js
+    rootDir: server

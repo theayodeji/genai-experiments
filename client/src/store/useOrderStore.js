@@ -4,9 +4,19 @@ import { create } from "zustand";
 // API base URL - use localhost:3001 in development, /api in production
 const API_BASE_URL = import.meta.env.DEV ? "http://localhost:3001/api" : "/api";
 
-// Generate a simple user ID if not exists
+// Generate a unique user ID if not exists
+const generateUserId = () => {
+  // Generate a random string for the user ID
+  return 'user_' + Math.random().toString(36).substr(2, 9);
+};
+
+// Get existing user ID or create a new one
 const getUserId = () => {
-  let userId = localStorage.getItem("userId") || 12345;
+  let userId = localStorage.getItem("userId");
+  if (!userId) {
+    userId = generateUserId();
+    localStorage.setItem("userId", userId);
+  }
   return userId;
 };
 
@@ -24,11 +34,15 @@ export const useOrderStore = create((set, get) => ({
     pendingConfirmations: [],
     userPreferences: { allergies: [], frequentOrders: [] },
   },
-  reset: () =>
-    {set({
+  reset: () => {
+    // Generate a new user ID when resetting
+    const newUserId = generateUserId();
+    localStorage.setItem("userId", newUserId);
+    
+    set({
       messages: [],
       currentOrder: { items: [], totalCost: 0, status: "draft" },
-      userId: getUserId(),
+      userId: newUserId,
       isLoading: false,
       isInitialized: false,
       isOrderComplete: false,
@@ -39,8 +53,6 @@ export const useOrderStore = create((set, get) => ({
         userPreferences: { allergies: [], frequentOrders: [] },
       },
     });
-
-    localStorage.removeItem("userId")
   },
 
   // Initialize session only once on first render

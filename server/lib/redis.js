@@ -21,3 +21,15 @@ export async function getRedisClient() {
   }
   return client;
 }
+
+export async function deleteSession(sessionId) {
+  try {
+    const redisClient = await getRedisClient();
+    await redisClient.del(`session:${sessionId}`);
+    console.log(`Session ${sessionId} deleted from Redis`);
+    return true;
+  } catch (error) {
+    console.error('Error deleting session from Redis:', error);
+    return false;
+  }
+}

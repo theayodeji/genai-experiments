@@ -1,17 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Send,
   ShoppingCart,
   CheckCircle,
   MessageCircle,
   Menu as MenuIcon,
+  X,
 } from "lucide-react";
 import { useOrderStore } from "./store/useOrderStore";
+import MenuModal from "./components/MenuModal";
 
 const RestaurantOrderingApp = () => {
   const [currentMessage, setCurrentMessage] = useState("");
   const [showCart, setShowCart] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [completedOrder, setCompletedOrder] = useState(null);
   const messagesEndRef = useRef(null);
 
@@ -78,25 +81,7 @@ const RestaurantOrderingApp = () => {
     }
   };
 
-  // Menu is now handled through the chat interface
-  const MenuDisplay = () => (
-    <div className="p-4 bg-white rounded-lg shadow-lg max-h-96 overflow-y-auto">
-      <h2 className="text-2xl font-bold mb-4 text-gray-800">How to Order</h2>
-      <p className="mb-4 text-gray-600">
-        You can ask our AI assistant about our menu items, prices, and place
-        your order through the chat.
-      </p>
-      <div className="space-y-2">
-        <p className="font-medium">Try saying:</p>
-        <ul className="list-disc pl-5 space-y-1 text-gray-700">
-          <li>"What's on the menu?"</li>
-          <li>"I'd like to order a burger"</li>
-          <li>"What are your specials?"</li>
-          <li>"I'm vegetarian, what do you recommend?"</li>
-        </ul>
-      </div>
-    </div>
-  );
+  const toggleMenu = useCallback(() => setIsMenuOpen((prev) => !prev), []);
 
   // Cart display component
   const CartDisplay = () => {
@@ -152,39 +137,117 @@ const RestaurantOrderingApp = () => {
   };
 
   // Component for Order Confirmation Modal
-  const OrderConfirmation = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full">
-        <div className="text-center">
-          <CheckCircle className="mx-auto text-green-600 mb-4" size={48} />
-          <h2 className="text-2xl font-bold mb-4 text-gray-800">
-            Order Confirmed!
-          </h2>
-          <p className="text-gray-600 mb-4">
-            Your order has been successfully placed. Thank you for your
-            business!
-          </p>
-          <div className="bg-gray-50 p-4 rounded-lg mb-4">
-            <p className="font-medium">
-              Order ID: {completedOrder?.id || "*********"}
-            </p>
-            <p className="text-sm text-gray-600">
-              Total: ₦{completedOrder?.totalCost?.toLocaleString() || "0"}
-            </p>
-          </div>
-          <button
-            onClick={() => {
-              setCompletedOrder(null); // Hide modal
-              initializeSession(); // Start a new session
+  const OrderConfirmation = () => {
+    if (!completedOrder) return null;
+
+    return (
+      <AnimatePresence>
+        <motion.div 
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <motion.div 
+            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+            initial={{ scale: 0.9, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.9, opacity: 0, y: 20 }}
+            transition={{ 
+              type: "spring",
+              damping: 20,
+              stiffness: 300
             }}
-            className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors"
           >
-            Go Back
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+            <motion.div 
+              className="text-center"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 260,
+                  damping: 20
+                }}
+              >
+                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+              </motion.div>
+              
+              <motion.h3 
+                className="text-2xl font-bold text-gray-900 mb-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+              >
+                Order Placed Successfully!
+              </motion.h3>
+              
+              <motion.p 
+                className="text-gray-600 mb-6 text-lg"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                Your order has been received and is being prepared.
+              </motion.p>
+              
+              <motion.div 
+                className="bg-gray-50 p-4 rounded-xl mb-6 text-left space-y-2"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+              >
+                <h4 className="font-semibold text-gray-900 text-lg mb-2">Order Summary:</h4>
+                {completedOrder.items.map((item, index) => (
+                  <motion.div 
+                    key={item.id} 
+                    className="flex justify-between text-sm py-1 border-b border-gray-100 last:border-0"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + (index * 0.05) }}
+                  >
+                    <span className="text-gray-700">
+                      {item.name} ×{item.quantity}
+                    </span>
+                    <span className="font-medium">₦{(item.price * item.quantity).toLocaleString()}</span>
+                  </motion.div>
+                ))}
+                <motion.div 
+                  className="border-t border-gray-200 mt-3 pt-3 font-medium text-base"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5 + (completedOrder.items.length * 0.05) }}
+                >
+                  <div className="flex justify-between">
+                    <span>Total:</span>
+                    <span className="text-lg text-green-600">₦{completedOrder.totalCost.toLocaleString()}</span>
+                  </div>
+                </motion.div>
+              </motion.div>
+              
+              <motion.button
+                onClick={() => setCompletedOrder(null)}
+                className="w-full bg-green-600 text-white py-3 px-6 rounded-xl hover:bg-green-700 transition-all 
+                           font-medium text-lg shadow-md hover:shadow-lg active:scale-95"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.6 + (completedOrder.items.length * 0.05) }}
+              >
+                Start New Order
+              </motion.button>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-red-50">
@@ -193,16 +256,20 @@ const RestaurantOrderingApp = () => {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-800">🍽️ NoshBites</h1>
+              <h1 className="text-2xl font-bold text-gray-800">
+                <img src="/logo.png" alt="Logo" className="w-8 h-8 inline mr-2" />
+                NoshBites
+              </h1>
               <p className="text-gray-600">AI "Chopping" Assistant</p>
             </div>
             <div className="flex space-x-2">
               <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="flex items-center space-x-2 bg-green-100 text-green-700 px-4 py-2 rounded-lg hover:bg-green-200 transition-colors"
+                onClick={toggleMenu}
+                className="p-2 flex items-center rounded-md text-gray-600 hover:bg-gray-100"
+                title="View Menu"
               >
-                <MenuIcon size={20} />
-                <span>Menu</span>
+                <MenuIcon className="h-5 w-5 inline mr-2"  />
+                <span className="inline">Menu</span>
               </button>
               <button
                 onClick={() => setShowCart(!showCart)}
@@ -237,24 +304,41 @@ const RestaurantOrderingApp = () => {
               </div>
 
               <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`flex ${
-                      message.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    <div
-                      className={`max-w-[75%] px-4 py-2 rounded-lg ${
-                        message.role === "user"
-                          ? "bg-blue-600 text-white"
-                          : "bg-gray-100 text-gray-800"
+                <AnimatePresence>
+                  {messages.map((message, index) => (
+                    <motion.div
+                      key={index}
+                      className={`flex ${
+                        message.role === "user" ? "justify-end" : "justify-start"
                       }`}
+                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, x: message.role === "user" ? 20 : -20, scale: 0.9 }}
+                      transition={{
+                        type: "spring",
+                        damping: 25,
+                        stiffness: 300,
+                        duration: 0.2
+                      }}
+                      layout
                     >
-                      {message.content}
-                    </div>
-                  </div>
-                ))}
+                      <motion.div
+                        className={`max-w-[75%] px-4 py-2 rounded-2xl ${
+                          message.role === "user"
+                            ? "bg-blue-600 text-white rounded-br-none"
+                            : "bg-gray-100 text-gray-800 rounded-bl-none"
+                        } shadow-sm`}
+                         whileTap={{ 
+                          scale: 0.98,
+                          boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
+                        }}
+                        layout="position"
+                      >
+                        {message.content}
+                      </motion.div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
                 {isLoading && (
                   <div className="flex justify-start">
                     <div className="bg-gray-100 text-gray-800 px-4 py-2 rounded-lg">
@@ -281,24 +365,36 @@ const RestaurantOrderingApp = () => {
               </div>
 
               <div className="p-4 border-t border-neutral-300">
-                <div className="flex">
+                <motion.div 
+                className="flex items-center p-4 border-t bg-white/50 backdrop-blur-sm"
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <motion.div 
+                  className="flex-1 relative"
+                  whileFocus={{ scale: 1.01 }}
+                >
                   <input
                     type="text"
                     value={currentMessage}
                     onChange={(e) => setCurrentMessage(e.target.value)}
-                    onKeyUp={handleKeyPress}
+                    onKeyDown={handleKeyPress}
                     placeholder="Type your message..."
-                    className="flex-1 border border-neutral-400 rounded-l-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-green-300"
+                    className="w-full border-2 border-gray-200 rounded-xl px-4 py-3 pr-12 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                     disabled={isLoading}
                   />
-                  <button
+                  <motion.button
                     onClick={handleSendMessage}
-                    className="bg-green-600 text-white px-4 py-2 rounded-r-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-300 disabled:opacity-50"
-                    disabled={!currentMessage.trim() || isLoading}
+                    disabled={isLoading || !currentMessage.trim()}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full text-blue-600 hover:bg-blue-50 disabled:text-gray-400 disabled:bg-transparent disabled:cursor-not-allowed transition-colors"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <Send size={20} />
-                  </button>
-                </div>
+                  </motion.button>
+                </motion.div>
+              </motion.div>
               </div>
             </div>
           </div>
@@ -307,7 +403,6 @@ const RestaurantOrderingApp = () => {
           <div className="space-y-4 lg:col-span-1">
             {" "}
             {/* Ensure it takes 1 column on large screens */}
-            {showMenu && <MenuDisplay />}
             {showCart && <CartDisplay />}
             {/* Order Summary (always visible) */}
             <div className="bg-white rounded-lg shadow-lg p-4">
@@ -341,6 +436,9 @@ const RestaurantOrderingApp = () => {
 
       {/* Order Confirmation Modal */}
       {completedOrder && <OrderConfirmation />}
+      
+      {/* Menu Modal */}
+      <MenuModal isOpen={isMenuOpen} onClose={toggleMenu} />
     </div>
   );
 };

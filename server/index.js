@@ -454,8 +454,21 @@ app.put('/api/order/:sessionId/item/:itemId', (req, res) => {
     res.json(session.currentOrder);
 });
 
+// Clear session from Redis
+app.post('/api/session/clear/:sessionId', async (req, res) => {
+    const { sessionId } = req.params;
+    
+    try {
+        await deleteSession(sessionId);
+        res.json({ success: true, message: 'Session cleared successfully' });
+    } catch (error) {
+        console.error('Error clearing session:', error);
+        res.status(500).json({ success: false, error: 'Failed to clear session' });
+    }
+});
+
 // Complete order (AI will detect intent to finalize, but this is the actual endpoint)
-app.post('/api/order/:sessionId/complete', (req, res) => {
+app.post('/api/order/:sessionId/complete', async (req, res) => {
     const { sessionId } = req.params;
     const { customerInfo } = req.body; // e.g., { name: "John Doe", address: "123 Main St" }
 
@@ -484,6 +497,14 @@ app.post('/api/order/:sessionId/complete', (req, res) => {
 
     // Clean up session (important: session is now "done")
     sessions.delete(sessionId);
+    
+    // Clear the session from Redis
+    try {
+        await deleteSession(sessionId);
+    } catch (error) {
+        console.error('Error clearing session from Redis:', error);
+        // Don't fail the request if Redis cleanup fails
+    }
 
     res.json({
         message: `Order #${orderId} has been successfully placed!`,

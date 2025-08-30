@@ -1,7 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import { getRedisClient } from './lib/redis.js';
+import { getRedisClient, deleteSession } from './lib/redis.js';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { MENU } from './lib/constants.js';
 import { fileURLToPath } from "url";
@@ -28,6 +28,19 @@ apiRouter.get("/", (req, res) => {
     res.json({ message: "API is running" });
 });
 
+// Clear session from Redis
+apiRouter.post('/session/clear/:sessionId', async (req, res) => {
+    const { sessionId } = req.params;
+    
+    try {
+        await deleteSession(sessionId);
+        res.json({ success: true, message: 'Session cleared successfully' });
+    } catch (error) {
+        console.error('Error clearing session:', error);
+        res.status(500).json({ success: false, error: 'Failed to clear session' });
+    }
+});
+
 // Chat endpoint
 apiRouter.post('/chat', async (req, res) => {
     try {
@@ -47,7 +60,7 @@ apiRouter.post('/chat', async (req, res) => {
         
         const prompt = `
         You are a restaurant ordering assistant. Your job is to:
-        1. Help customers understand the menu.
+        1. Help customers understand the menu. If he/she wants to view it, direct them to click the button at the top right corner of the page.
         2. Take their orders accurately.
         3. Use the special ORDER commands when managing items in their cart.
         4. Provide conversational responses to the user, be semi-formal.

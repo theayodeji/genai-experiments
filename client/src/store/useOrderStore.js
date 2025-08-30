@@ -2,7 +2,7 @@
 import { create } from "zustand";
 
 // API base URL - use localhost:3001 in development, /api in production
-const API_BASE_URL = import.meta.env.DEV ? "http://localhost:3001" : "/api";
+const API_BASE_URL = import.meta.env.DEV ? "http://localhost:3001/api" : "/api";
 
 // Generate a simple user ID if not exists
 const getUserId = () => {
@@ -162,7 +162,21 @@ export const useOrderStore = create((set, get) => ({
   },
 
   // Clear the current session
-  clearSession: () => {
+  clearSession: async () => {
+    const userId = get().userId;
+    
+    try {
+      // Call the server to clear the session from Redis
+      await fetch(`${API_BASE_URL}/session/clear/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch (error) {
+      console.error('Error clearing session from server:', error);
+      // Continue with local cleanup even if server call fails
+    }
+    
+    // Local cleanup
     localStorage.removeItem("userId");
     // Generate a new user ID
     const newUserId = `user_${Math.random().toString(36).substr(2, 9)}`;

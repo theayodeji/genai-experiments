@@ -2,11 +2,10 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Send,
-  ShoppingCart,
   CheckCircle,
+  ShoppingCart,
   MessageCircle,
   Menu as MenuIcon,
-  X,
 } from "lucide-react";
 import { useOrderStore } from "./store/useOrderStore";
 import MenuModal from "./components/MenuModal";
@@ -136,68 +135,68 @@ const RestaurantOrderingApp = () => {
     );
   };
 
-  // Component for Order Confirmation Modal
-  const OrderConfirmation = () => {
-    if (!completedOrder) return null;
+// Memoized OrderConfirmation component outside the main component
+const OrderConfirmation = React.memo(({ completedOrder, onClose }) => {
+  if (!completedOrder) return null;
 
-    return (
-      <AnimatePresence>
+  return (
+    <AnimatePresence>
+      <motion.div 
+        className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+      >
         <motion.div 
-          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
+          initial={{ scale: 0.9, opacity: 0, y: 20 }}
+          animate={{ scale: 1, opacity: 1, y: 0 }}
+          exit={{ scale: 0.9, opacity: 0, y: 20 }}
+          transition={{ 
+            type: "spring",
+            damping: 20,
+            stiffness: 300
+          }}
         >
           <motion.div 
-            className="bg-white rounded-2xl p-6 max-w-md w-full shadow-xl"
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ 
-              type: "spring",
-              damping: 20,
-              stiffness: 300
-            }}
+            className="text-center"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
           >
-            <motion.div 
-              className="text-center"
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{
+                type: "spring",
+                stiffness: 260,
+                damping: 20
+              }}
+            >
+              <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
+            </motion.div>
+            
+            <motion.h3 
+              className="text-2xl font-bold text-gray-900 mb-2"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.1 }}
+            >
+              Order Placed Successfully!
+            </motion.h3>
+            
+            <motion.p 
+              className="text-gray-600 mb-6 text-lg"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 260,
-                  damping: 20
-                }}
-              >
-                <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              </motion.div>
-              
-              <motion.h3 
-                className="text-2xl font-bold text-gray-900 mb-2"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 }}
-              >
-                Order Placed Successfully!
-              </motion.h3>
-              
-              <motion.p 
-                className="text-gray-600 mb-6 text-lg"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                Your order has been received and is being prepared.
-              </motion.p>
-              
-              <motion.div 
-                className="bg-gray-50 p-4 rounded-xl mb-6 text-left space-y-2"
+              Your order has been received and is being prepared.
+            </motion.p>
+            
+            <motion.div 
+              className="bg-gray-50 p-4 rounded-xl mb-6 text-left space-y-2"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
@@ -247,7 +246,7 @@ const RestaurantOrderingApp = () => {
         </motion.div>
       </AnimatePresence>
     );
-  };
+  });
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-red-50">
@@ -435,7 +434,10 @@ const RestaurantOrderingApp = () => {
       </div>
 
       {/* Order Confirmation Modal */}
-      {completedOrder && <OrderConfirmation />}
+      <OrderConfirmation 
+        completedOrder={completedOrder} 
+        onClose={() => setCompletedOrder(null)} 
+      />
       
       {/* Menu Modal */}
       <MenuModal isOpen={isMenuOpen} onClose={toggleMenu} />

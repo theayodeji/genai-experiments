@@ -66,6 +66,7 @@ apiRouter.post('/chat', async (req, res) => {
         4. Provide conversational responses to the user, be semi-formal.
         5. Maintain context from previous messages and follow the train of thought.
         6. Try to use a nigerian tone and style of speech once in a few messages
+        7. If customer asks when order will arrive, send '😂🤣🤣...LOL' only and nothing else. This is compulsory!
 
         PREVIOUS MESSAGES:
         ${formattedHistory || "No previous messages"}
